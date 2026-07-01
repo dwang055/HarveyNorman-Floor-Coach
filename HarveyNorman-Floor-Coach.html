@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>HN Floor Coach</title>
+<style>
+  :root {
+    --container: 480px;
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+  }
+  html[data-theme="dark"] {
+    --bg: #0f172a;
+    --surface: #0b1220;
+    --surface-2: #020617;
+    --surface-3: #15213a;
+    --border: #1e293b;
+    --border-soft: rgba(255,255,255,0.07);
+    --text: #f1f5f9;
+    --text-dim: #97a3b8;
+    --text-faint: #5b6b85;
+    --accent: #3b82f6;
+    --accent-rgb: 59,130,246;
+    --success: #34d399;
+    --success-rgb: 52,211,153;
+    --danger: #fb7185;
+    --danger-rgb: 251,113,133;
+    --shadow: 0 12px 30px rgba(0,0,0,0.45);
+  }
+  html[data-theme="light"] {
+    --bg: #f3f5f9;
+    --surface: #ffffff;
+    --surface-2: #eef1f6;
+    --surface-3: #e7ebf3;
+    --border: #dde3ee;
+    --border-soft: rgba(15,23,42,0.06);
+    --text: #0f172a;
+    --text-dim: #54607a;
+    --text-faint: #8893a8;
+    --accent: #2563eb;
+    --accent-rgb: 37,99,235;
+    --success: #059669;
+    --success-rgb: 5,150,105;
+    --danger: #e11d48;
+    --danger-rgb: 225,29,72;
+    --shadow: 0 12px 24px rgba(15,23,42,0.10);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+    user-select: none;
+    transition: background .2s ease, color .2s ease;
+  }
+  ::-webkit-scrollbar { display: none; }
+  button, input, textarea, select { font-family: inherit; color: inherit; }
+  button { cursor: pointer; }
+  a { color: var(--accent); }
+  .wrap { width: 100%; max-width: var(--container); margin: 0 auto; }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+  .hidden { display: none !important; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+
+  /* ---------- header ---------- */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    box-shadow: var(--shadow);
+  }
+  .header-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .brand h1 { font-size: 18px; font-weight: 900; letter-spacing: -0.02em; margin: 0; display: flex; align-items: center; gap: 7px; }
+  .brand .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); animation: pulse 2.2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+  .brand p { font-size: 10px; font-weight: 700; color: var(--text-faint); text-transform: uppercase; letter-spacing: .08em; margin: 2px 0 0; }
+  .header-actions { display: flex; gap: 6px; }
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--surface-2); display: flex; align-items: center; justify-content: center;
+    color: var(--text-dim); transition: transform .1s ease;
+  }
+  .icon-btn:active { transform: scale(0.93); }
+  .icon-btn svg { width: 17px; height: 17px; }
+  .badge-row { margin-top: 8px; }
+  .stat-pill {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 800;
+    background: rgba(var(--accent-rgb),0.12); color: var(--accent); border: 1px solid rgba(var(--accent-rgb),0.3);
+    padding: 4px 10px; border-radius: 99px;
+  }
+
+  /* ---------- main / tabs ---------- */
+  main { flex: 1; overflow-y: auto; padding: 16px 16px 110px; }
+  .tab-view.hidden { display: none; }
+  .section-head { margin-bottom: 14px; }
+  .section-head h2 { font-size: 19px; font-weight: 800; margin: 0; }
+  .section-head p { font-size: 12px; color: var(--text-dim); margin: 3px 0 0; }
+  .section-head-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; margin-bottom: 14px; }
+
+  .card-surface {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+  }
+
+  /* ---------- zone grid ---------- */
+  .zone-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 10px; margin-bottom: 14px;
+  }
+  .zone-btn {
+    --zc: 59,130,246;
+    text-align: left; border-radius: var(--radius-md); padding: 12px; min-height: 96px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    background: rgba(var(--zc),0.08); border: 1px solid rgba(var(--zc),0.3);
+    transition: transform .1s ease, background .15s ease, box-shadow .15s ease;
+  }
+  .zone-btn:active { transform: scale(0.97); }
+  .zone-btn.is-active { background: rgba(var(--zc),0.18); box-shadow: 0 0 0 2px rgba(var(--zc),0.65); }
+  .zone-code {
+    width: 26px; height: 26px; border-radius: 7px; display: flex; align-items: center; justify-content: center;
+    background: rgba(var(--zc),0.2); border: 1px solid rgba(var(--zc),0.35); color: rgb(var(--zc));
+    font-size: 11px; font-weight: 900;
+  }
+  .zone-label { display: block; font-weight: 800; font-size: 13.5px; line-height: 1.2; margin-top: 8px; }
+  .zone-loc { display: block; font-size: 10px; font-weight: 600; color: var(--text-faint); margin-top: 2px; }
+
+  .zone-details { padding: 18px; }
+  .zone-empty { text-align: center; padding: 18px 8px; color: var(--text-faint); font-size: 12.5px; font-weight: 500; }
+  .zone-details h3 { font-size: 14.5px; font-weight: 800; margin: 0 0 2px; }
+  .zone-path { font-size: 11px; font-weight: 700; color: #f0ad2b; margin: 0 0 10px; }
+  .zone-cats { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--border); padding-top: 10px; }
+  .zone-cat { font-size: 12.5px; color: var(--text-dim); display: flex; align-items: center; gap: 8px; }
+  .zone-cat::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--text-faint); flex-shrink: 0; }
+  .zone-hero { margin-top: 12px; padding: 10px; border-radius: var(--radius-sm); background: var(--surface-2); border: 1px solid var(--border); }
+  .zone-hero-label { font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--text-faint); }
+  .zone-hero-name { font-size: 13px; font-weight: 700; margin-top: 2px; }
+  .zone-hero-hint { font-size: 11.5px; color: var(--text-dim); margin-top: 2px; }
+  .btn-link-row { margin-top: 12px; }
+
+  /* ---------- buttons ---------- */
+  .btn {
+    border-radius: 10px; font-weight: 700; font-size: 12.5px; padding: 9px 16px; border: 1px solid var(--border);
+    background: var(--surface-2); color: var(--text); min-height: 40px; display: inline-flex; align-items: center; gap: 6px; justify-content: center;
+    transition: transform .1s ease;
+  }
+  .btn:active { transform: scale(0.96); }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-success { background: rgba(var(--success-rgb),0.15); border-color: rgba(var(--success-rgb),0.4); color: var(--success); }
+  .btn-danger { background: rgba(var(--danger-rgb),0.12); border-color: rgba(var(--danger-rgb),0.35); color: var(--danger); }
+  .btn-full { width: 100%; }
+  .btn-sm { font-size: 11px; padding: 6px 10px; min-height: 32px; }
+  .btn[disabled] { opacity: .45; pointer-events: none; }
+
+  /* ---------- hunt ---------- */
+  .hunt-list { display: flex; flex-direction: column; gap: 10px; }
+  .hunt-row {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);
+    padding: 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  }
+  .hunt-row.is-done { opacity: .55; background: rgba(var(--success-rgb),0.06); border-color: rgba(var(--success-rgb),0.3); }
+  .hunt-zone-tag {
+    --zc: 59,130,246; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em;
+    background: rgba(var(--zc),0.15); color: rgb(var(--zc)); border: 1px solid rgba(var(--zc),0.3);
+    padding: 2px 7px; border-radius: 6px; display: inline-block;
+  }
+  .hunt-row h3 { font-size: 13.5px; font-weight: 800; margin: 6px 0 2px; }
+  .hunt-row p { font-size: 11px; color: var(--text-dim); margin: 0; max-width: 220px; }
+
+  /* ---------- flashcards ---------- */
+  .card-toolbar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .segmented { display: inline-flex; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 2px; }
+  .segmented button { border: none; background: transparent; font-size: 11.5px; font-weight: 700; padding: 7px 12px; border-radius: 8px; color: var(--text-dim); }
+  .segmented button.is-active { background: var(--accent); color: #fff; }
+  select.field, input.field, textarea.field {
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px;
+    font-size: 12.5px; color: var(--text); width: 100%;
+  }
+  .perspective { perspective: 1200px; width: 100%; aspect-ratio: 4/5; max-height: 380px; }
+  .flip-inner {
+    width: 100%; height: 100%; position: relative; transform-style: preserve-3d;
+    transition: transform .35s ease; border-radius: var(--radius-lg); cursor: pointer;
+  }
+  .flip-inner.is-flipped { transform: rotateY(180deg); }
+  .face {
+    position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    border-radius: var(--radius-lg); padding: 22px; display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .face-front { background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); }
+  .face-back {
+    transform: rotateY(180deg); background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+    border: 2px solid rgba(var(--accent-rgb),0.45); box-shadow: var(--shadow); overflow: hidden;
+  }
+  .card-zone-tag {
+    font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+    background: rgba(var(--accent-rgb),0.15); color: var(--accent); border: 1px solid rgba(var(--accent-rgb),0.35);
+    padding: 4px 10px; border-radius: 7px; align-self: flex-start;
+  }
+  .card-title { font-size: 22px; font-weight: 900; margin: 14px 0 0; line-height: 1.15; }
+  .card-sub { font-size: 11.5px; color: var(--text-dim); margin: 4px 0 0; font-weight: 600; }
+  .card-note { font-size: 10.5px; color: #f0ad2b; margin-top: 8px; font-weight: 600; }
+  .flip-hint {
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 10px;
+    text-align: center; font-size: 11.5px; font-weight: 700; color: var(--text-dim);
+  }
+  .back-scroll { overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 2px; }
+  .back-block { border-top: 1px solid var(--border-soft); padding-top: 8px; }
+  .back-block:first-child { border-top: none; padding-top: 0; }
+  .back-eyebrow { font-size: 9px; text-transform: uppercase; letter-spacing: .07em; font-weight: 800; color: var(--text-faint); }
+  .back-eyebrow.is-success { color: var(--success); }
+  .back-text { font-size: 12.5px; color: var(--text); font-weight: 500; line-height: 1.4; margin-top: 3px; }
+  .benefit-box {
+    background: rgba(var(--success-rgb), 0.14); border: 1px solid rgba(var(--success-rgb), 0.4);
+    border-radius: 10px; padding: 10px 11px; margin-top: 4px;
+  }
+  .back-text.is-success { color: var(--success); font-weight: 700; }
+  .quiz-wrap { position: relative; }
+  .quiz-reveal-btn {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    background: rgba(var(--accent-rgb), 0.14); border-radius: 10px; border: 1px dashed rgba(var(--accent-rgb),0.55);
+    color: var(--accent); font-size: 11.5px; font-weight: 800; text-align: center; padding: 12px 8px; margin-top: 4px;
+  }
+  .quiz-answer-row { display: flex; gap: 8px; margin-top: 4px; }
+  .quiz-answer-row .btn { flex: 1; }
+  .card-footer-hint { font-size: 9px; text-align: center; color: var(--text-faint); font-weight: 700; padding-top: 8px; border-top: 1px solid var(--border-soft); }
+  .card-controls { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; padding: 0 2px; }
+  .card-indicator { font-size: 11.5px; font-weight: 800; letter-spacing: .05em; color: var(--text-dim); }
+  .quiz-score { font-size: 10px; color: var(--success); font-weight: 700; margin-top: 2px; text-align: center; }
+
+  /* ---------- search ---------- */
+  .search-sticky { position: sticky; top: 0; background: var(--bg); padding-bottom: 10px; z-index: 5; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .chip {
+    --zc: 59,130,246; font-size: 11px; font-weight: 700; padding: 6px 11px; border-radius: 99px;
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--text-dim);
+  }
+  .chip.is-active { background: rgba(var(--zc),0.18); border-color: rgba(var(--zc),0.5); color: rgb(var(--zc)); }
+  .result-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px; box-shadow: var(--shadow); margin-bottom: 10px; }
+  .result-head { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border-soft); padding-bottom: 8px; margin-bottom: 8px; gap: 8px; }
+  .result-head h3 { font-size: 14px; font-weight: 900; margin: 0; }
+  .result-tag { font-size: 9px; font-weight: 800; text-transform: uppercase; background: var(--surface-2); border: 1px solid var(--border); color: var(--accent); padding: 3px 7px; border-radius: 6px; white-space: nowrap; }
+  .result-line { font-size: 12px; line-height: 1.4; margin: 0 0 6px; }
+  .result-line strong { display: block; font-size: 9px; text-transform: uppercase; letter-spacing: .05em; color: var(--text-faint); font-weight: 800; }
+  .result-line.pitch { color: var(--success); font-weight: 600; }
+  .result-line.pitch strong { color: var(--success); }
+  .empty-state { text-align: center; padding: 50px 16px; color: var(--text-faint); font-size: 12px; font-weight: 600; }
+  .empty-state.is-error { color: var(--danger); font-weight: 700; }
+
+  /* ---------- bottom nav ---------- */
+  nav.bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); border-top: 1px solid var(--border);
+    box-shadow: 0 -8px 24px rgba(0,0,0,0.18); z-index: 50; padding-bottom: env(safe-area-inset-bottom);
+  }
+  .nav-grid { display: grid; grid-template-columns: repeat(4, 1fr); height: 64px; }
+  .nav-btn {
+    background: none; border: none; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px; font-size: 10px; font-weight: 600; color: var(--text-faint);
+  }
+  .nav-btn svg { width: 20px; height: 20px; }
+  .nav-btn.is-active { color: var(--accent); font-weight: 800; }
+
+  /* ---------- manage modal ---------- */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 100; display: flex; align-items: flex-end;
+  }
+  .modal-backdrop.hidden { display: none; }
+  .modal-sheet {
+    background: var(--bg); width: 100%; max-width: var(--container); margin: 0 auto; max-height: 88vh;
+    border-radius: 20px 20px 0 0; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border);
+  }
+  .modal-head { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+  .modal-head h2 { font-size: 15px; font-weight: 900; margin: 0; }
+  .modal-tabs { display: flex; gap: 6px; padding: 10px 16px 0; }
+  .modal-tabs button { flex: 1; }
+  .modal-body { overflow-y: auto; padding: 14px 16px 24px; display: flex; flex-direction: column; gap: 14px; }
+  .modal-pane.hidden { display: none; }
+  .editor-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .editor-row { display: flex; flex-direction: column; gap: 4px; }
+  .editor-row label { font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--text-faint); }
+  .editor-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .color-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .color-dot { width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; }
+  .color-dot.is-selected { border-color: var(--text); }
+  .editor-foot { display: flex; justify-content: space-between; align-items: center; padding-top: 4px; border-top: 1px solid var(--border-soft); }
+  .help-text { font-size: 11px; color: var(--text-dim); line-height: 1.5; }
+  .data-actions { display: flex; flex-direction: column; gap: 10px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="header-row">
+      <div class="brand">
+        <h1><span class="dot"></span>HN FLOOR COACH</h1>
+        <p>Practical store training tool</p>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="theme-toggle" aria-label="Toggle bright / dark mode" aria-pressed="false">
+          <svg id="theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></svg>
+        </button>
+        <button class="icon-btn" id="manage-open" aria-label="Customize zones and catalog for your store">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="badge-row">
+      <span class="stat-pill" id="stat-pill">Loading…</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <section id="view-map" class="tab-view">
+      <div class="section-head">
+        <h2>🗺️ Store Blueprint</h2>
+        <p>Tap a zone for local categories. Layout varies by store — use the gear icon above to match yours.</p>
+      </div>
+      <div class="zone-grid" id="zone-grid"></div>
+      <div class="zone-details card-surface" id="zone-details">
+        <div class="zone-empty">Tap any zone above to see its categories.</div>
+      </div>
+    </section>
+
+    <section id="view-hunt" class="tab-view hidden">
+      <div class="section-head-row">
+        <div class="section-head" style="margin-bottom:0;">
+          <h2>🏆 Floor Layout Challenge</h2>
+          <p>Walk the floor and confirm each zone's hero display.</p>
+        </div>
+        <span class="stat-pill" id="hunt-score">0/0</span>
+      </div>
+      <div class="hunt-list" id="hunt-list"></div>
+      <div style="margin-top:14px;">
+        <button class="btn btn-full" id="hunt-reset">Reset hunt progress</button>
+      </div>
+    </section>
+
+    <section id="view-cards" class="tab-view hidden">
+      <div class="section-head">
+        <h2>🎴 F.A.B. Flashcards</h2>
+        <p>Tap the card to flip. Switch to Quiz mode to test recall instead of just reading.</p>
+      </div>
+      <div class="card-toolbar">
+        <div class="segmented" role="tablist" aria-label="Card mode">
+          <button id="mode-study" data-mode="study">Study</button>
+          <button id="mode-quiz" data-mode="quiz">Quiz</button>
+        </div>
+        <select class="field" id="card-zone-filter" style="flex:1; min-width:120px;"></select>
+        <button class="icon-btn" id="card-shuffle" aria-label="Shuffle deck">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+        </button>
+      </div>
+
+      <div class="perspective" id="flip-zone">
+        <div class="flip-inner" id="flashcard">
+          <div class="face face-front">
+            <div>
+              <span class="card-zone-tag" id="card-zone-tag">Zone</span>
+              <h3 class="card-title" id="card-title">Loading…</h3>
+              <p class="card-sub" id="card-sub"></p>
+              <p class="card-note" id="card-note-front" style="display:none;"></p>
+            </div>
+            <div class="flip-hint" id="flip-hint-front">🔄 Tap card to view pitch script</div>
+          </div>
+          <div class="face face-back">
+            <div class="back-scroll">
+              <div class="back-block">
+                <p class="back-eyebrow">⭐ Feature (what it has)</p>
+                <p class="back-text" id="card-feature">…</p>
+              </div>
+              <div class="back-block">
+                <p class="back-eyebrow">⚡ Advantage (what that does)</p>
+                <p class="back-text" id="card-advantage">…</p>
+              </div>
+              <div class="back-block quiz-wrap" id="benefit-wrap">
+                <p class="back-eyebrow is-success">❤️ Benefit (why customer cares)</p>
+                <div class="benefit-box" id="benefit-box">
+                  <p class="back-text is-success" id="card-benefit">…</p>
+                </div>
+                <button type="button" class="quiz-reveal-btn hidden" id="quiz-reveal-btn">👁 Tap to reveal pitch script</button>
+              </div>
+              <div class="quiz-answer-row hidden" id="quiz-answer-row">
+                <button class="btn btn-success btn-sm" id="quiz-got-it">✅ Got it</button>
+                <button class="btn btn-danger btn-sm" id="quiz-review-again">🔁 Review again</button>
+              </div>
+            </div>
+            <p class="card-footer-hint">🔄 Tap to flip back</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-controls">
+        <button class="btn" id="card-prev">Prev</button>
+        <div>
+          <div class="card-indicator" id="card-indicator">1 / 1</div>
+          <div class="quiz-score hidden" id="quiz-score"></div>
+        </div>
+        <button class="btn" id="card-next">Next</button>
+      </div>
+    </section>
+
+    <section id="view-search" class="tab-view hidden">
+      <div class="section-head">
+        <h2>🔍 Customer Panic Assistant</h2>
+        <p>Search hero items for instant locations and answers.</p>
+      </div>
+      <div class="search-sticky">
+        <div class="chip-row" id="search-chips"></div>
+        <input type="text" class="field" id="search-input" placeholder="Type item name, brand, or zone…">
+      </div>
+      <div id="search-results"></div>
+    </section>
+
+  </div>
+</main>
+
+<nav class="bottom-nav">
+  <div class="nav-grid wrap">
+    <button class="nav-btn" id="nav-map" data-tab="map">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+      <span>Layout Map</span>
+    </button>
+    <button class="nav-btn" id="nav-hunt" data-tab="hunt">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138z"></path></svg>
+      <span>Floor Hunt</span>
+    </button>
+    <button class="nav-btn" id="nav-cards" data-tab="cards">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+      <span>F.A.B. Cards</span>
+    </button>
+    <button class="nav-btn" id="nav-search" data-tab="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+      <span>Cheat Sheet</span>
+    </button>
+  </div>
+</nav>
+
+<div class="modal-backdrop hidden" id="manage-modal">
+  <div class="modal-sheet">
+    <div class="modal-head">
+      <h2>🛠 Customize for your store</h2>
+      <button class="icon-btn" id="manage-close" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    <div class="modal-tabs">
+      <button class="btn btn-sm" data-pane="zones" id="mt-zones">Zones</button>
+      <button class="btn btn-sm" data-pane="catalog" id="mt-catalog">Catalog</button>
+      <button class="btn btn-sm" data-pane="data" id="mt-data">Data</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-pane" id="pane-zones">
+        <p class="help-text">Every Harvey Norman store is laid out differently. Edit zone names, locations, categories and the hunt-task hero item so this matches your actual floor — it saves automatically on this device.</p>
+        <div id="zones-editor"></div>
+        <button class="btn btn-primary btn-full" id="zone-add">+ Add zone</button>
+      </div>
+      <div class="modal-pane hidden" id="pane-catalog">
+        <p class="help-text">These are the hero items used in F.A.B. Cards and the Cheat Sheet search. Add, edit or remove items as ranges change in-store.</p>
+        <div id="catalog-editor"></div>
+        <button class="btn btn-primary btn-full" id="catalog-add">+ Add catalog item</button>
+      </div>
+      <div class="modal-pane hidden" id="pane-data">
+        <div class="data-actions">
+          <div class="editor-card">
+            <strong style="font-size:12.5px;">Export your setup</strong>
+            <p class="help-text">Copy this and share it with another store, or paste it back in to restore a backup.</p>
+            <textarea class="field" id="export-box" rows="6" readonly></textarea>
+            <button class="btn btn-full" id="export-copy">Copy to clipboard</button>
+          </div>
+          <div class="editor-card">
+            <strong style="font-size:12.5px;">Import a setup</strong>
+            <textarea class="field" id="import-box" rows="6" placeholder="Paste exported JSON here…"></textarea>
+            <button class="btn btn-primary btn-full" id="import-apply">Apply imported data</button>
+          </div>
+          <button class="btn btn-danger btn-full" id="reset-defaults">Reset everything to NZ store defaults</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================ DEFAULT DATA ============================ */
+  var ZONE_PALETTE = [
+    "59,130,246",   // blue
+    "16,185,129",   // emerald
+    "217,119,6",    // amber
+    "139,92,246",   // violet
+    "244,63,94",    // rose
+    "6,182,212"     // cyan
+  ];
+
+  var DEFAULT_ZONES = [
+    { id: "tech", label: "Tech & Info", location: "Front Right Entrance", colorIndex: 0,
+      categories: ["Laptops & MacBooks", "Smartphones & Connected Watches", "Wi-Fi 7 Mesh Networking", "Gaming Consoles & PC Gaming", "Printers & Office Tech"],
+      heroItem: { name: "Apple Eco-Table Display", hint: "Locate where the live iPad Pro and MacBook display table sits." } },
+    { id: "appliances", label: "Appliances & AV", location: "Front Left Matrix", colorIndex: 1,
+      categories: ["OLED / Mini-LED / QLED TVs", "Soundbars & Home Theatre", "Fridges, Dishwashers & Cooking", "Washing Machines & Dryers", "Coffee & Kitchen Appliances", "Dyson Floor Care"],
+      heroItem: { name: "Dyson Wall Bays", hint: "Find the vertical stick-vacuum display brackets." } },
+    { id: "furniture", label: "Furniture Suite", location: "Rear Left Main", colorIndex: 2,
+      categories: ["NZ Made Lounge Suites", "Recliner & Lounge Range", "Dining & Table Suites", "Home Office Desks & Chairs", "BBQs & Outdoor Furniture"],
+      heroItem: { name: "Recliner & Lounge Range", hint: "Find the dedicated recliner display row. Note: in some stores this is run as a separate concession (e.g. a La-Z-Boy Gallery) rather than Harvey Norman's own range — confirm locally." } },
+    { id: "bedding", label: "Bedding Haven", location: "Rear Quiet Space", colorIndex: 3,
+      categories: ["Sealy, Beautyrest & Tempur Mattresses", "Bed Bases & Frames", "Bedroom Furniture & Storage", "Bed Linen, Pillows & Duvets"],
+      heroItem: { name: "Tempur Sleep Studio", hint: "Find the contour-lit premium mattress pod." } }
+  ];
+
+  var DEFAULT_CATALOG = [
+    // ZONE 1: TECH & INFO (20)
+    { id: "c01", zoneId: "tech", name: "Next-Gen Copilot+ AI Windows Laptop", tags: "laptop computer windows asus hp acer lenovo surface AI npu", feature: "Dedicated on-board Neural Processing Unit (NPU) handling 45+ TOPS.", advantage: "Processes machine-learning tasks and live translation locally without cloud latency.", benefit: "Unlocks real-time recall search, automatic video effects, and true all-day battery life." },
+    { id: "c02", zoneId: "tech", name: "Apple MacBook Air", tags: "macbook air apple mac laptop computer silicon", feature: "Apple Silicon unified memory system with fanless aluminium enclosure.", advantage: "Handles high-speed file compilation and creative rendering with zero acoustic noise.", benefit: "Incredibly light for mobile professionals without sacrificing high-end performance." },
+    { id: "c03", zoneId: "tech", name: "Apple MacBook Pro", tags: "macbook pro apple mac laptop computer silicon m series", feature: "Pro/Max-tier Apple Silicon chip with a ProMotion 120Hz mini-LED display.", advantage: "Renders 4K timelines and compiles large codebases without throttling under sustained load.", benefit: "Gives power users desktop-class performance they can carry to a client meeting." },
+    { id: "c04", zoneId: "tech", name: "Apple iMac", tags: "imac apple desktop all in one computer", feature: "All-in-one 24-inch 4.5K Retina display built around Apple Silicon.", advantage: "Removes cable clutter and a tower footprint while handling everyday creative work.", benefit: "A clean, ready-to-go computer for a family room or home study." },
+    { id: "c05", zoneId: "tech", name: "Apple iPhone (Pro Max)", tags: "iphone apple phone mobile pro max", feature: "Pro-grade triple camera system with periscope zoom on a titanium frame.", advantage: "Captures crisp detail at distance and shrugs off daily knocks better than standard glass-and-aluminium phones.", benefit: "One device that covers serious photography and everyday durability." },
+    { id: "c06", zoneId: "tech", name: "Samsung Galaxy S Ultra", tags: "samsung galaxy s ultra phone mobile android s pen", feature: "Built-in S Pen stylus paired with a 200MP main camera sensor and AI photo tools.", advantage: "Lets users sketch notes, sign documents, and reframe photos without extra accessories.", benefit: "Appeals to professionals who want a phone that doubles as a notebook and camera." },
+    { id: "c07", zoneId: "tech", name: "Wi-Fi 7 Smart Mesh System", tags: "wifi network router internet mesh netgear tplink deco", feature: "Multi-Link Operation (MLO) across ultra-wide 6GHz wireless channels.", advantage: "Bridges multiple frequency lines to bypass dense neighbourhood signal blockages.", benefit: "Guarantees buffer-free 8K streaming and video calls in remote rooms of the house." },
+    { id: "c08", zoneId: "tech", name: "PlayStation 5 Pro Console", tags: "playstation gaming game console sony ps5 disc controller", feature: "Advanced ray-tracing hardware with AI-driven spectral upscale sharpening.", advantage: "Locks high-fidelity graphics down to a fluid 60FPS on large screens.", benefit: "Delivers realistic visual motion that takes home gaming into cinematic territory." },
+    { id: "c09", zoneId: "tech", name: "Nintendo Switch 2 Console", tags: "nintendo switch 2 gaming console handheld", feature: "Magnetic Joy-Con 2 controllers with a larger 1080p HDR screen and mouse-mode input.", advantage: "Switches instantly between handheld, tabletop, and docked TV play with sharper visuals.", benefit: "One console that covers solo travel gaming and full-family lounge sessions." },
+    { id: "c10", zoneId: "tech", name: "Xbox Series X Console", tags: "xbox series x gaming console microsoft", feature: "Custom high-speed SSD storage with Quick Resume across several games at once.", advantage: "Jumps between multiple in-progress games in seconds with no long reloads.", benefit: "Keeps household gaming sessions moving without the wait." },
+    { id: "c11", zoneId: "tech", name: "Apple iPad Pro (OLED)", tags: "ipad apple tablet pro screen display pencil keyboard", feature: "Tandem OLED panel combined with desktop-tier processing power.", advantage: "Produces extreme highlight brightness and colour accuracy for production work.", benefit: "Replaces heavy travel equipment for creators and designers with a single slate." },
+    { id: "c12", zoneId: "tech", name: "Samsung Galaxy Tab", tags: "samsung galaxy tab android tablet s pen", feature: "Large AMOLED display paired with an included or optional S Pen.", advantage: "Handles split-screen multitasking and handwritten note-taking in one device.", benefit: "A flexible pick for students and professionals who want laptop-style productivity in a tablet." },
+    { id: "c13", zoneId: "tech", name: "Apple Watch", tags: "apple watch smartwatch fitness tracker health", feature: "Always-on Retina display with blood oxygen and ECG health sensors.", advantage: "Tracks workouts, sleep, and heart health automatically throughout the day.", benefit: "Gives health-conscious customers a daily wellbeing check without a separate device." },
+    { id: "c14", zoneId: "tech", name: "Samsung Galaxy Watch", tags: "samsung galaxy watch smartwatch fitness android", feature: "Rotating bezel navigation with body composition and sleep coaching tools.", advantage: "Pairs tightly with Android phones for notifications, calls, and fitness tracking.", benefit: "A natural add-on sale alongside any Samsung Galaxy phone purchase." },
+    { id: "c15", zoneId: "tech", name: "Noise-Cancelling Headphones", tags: "headphones noise cancelling sony bose over ear", feature: "Adaptive active noise cancellation with seamless multi-device Bluetooth pairing.", advantage: "Blocks out office or flight noise while switching instantly between laptop and phone.", benefit: "Popular with commuters, students, and frequent flyers wanting quiet, uninterrupted focus." },
+    { id: "c16", zoneId: "tech", name: "True Wireless Earbuds", tags: "airpods earbuds true wireless bluetooth apple", feature: "Compact charging case with spatial audio and a transparency listening mode.", advantage: "Lets the wearer hear traffic and conversations without removing an earbud.", benefit: "A practical, easy add-on to almost any phone sale in this zone." },
+    { id: "c17", zoneId: "tech", name: "Portable Bluetooth Speaker", tags: "bluetooth speaker portable waterproof party", feature: "IP67 waterproof shell rated for 12+ hours of battery life.", advantage: "Survives poolside, beach, and garden use without needing to come back indoors.", benefit: "An easy impulse add-on for customers buying outdoor or summer gear." },
+    { id: "c18", zoneId: "tech", name: "Gaming Monitor", tags: "gaming monitor screen refresh rate pc esports", feature: "High refresh-rate panel (165Hz+) with low input lag and adaptive sync.", advantage: "Keeps fast-motion gameplay smooth and tear-free for competitive titles.", benefit: "A natural pairing with any console or gaming PC sale in this zone." },
+    { id: "c19", zoneId: "tech", name: "Ink Tank All-in-One Printer", tags: "printer ink tank epson canon refillable office", feature: "Refillable ink tanks replacing disposable cartridges, rated for thousands of pages.", advantage: "Cuts the cost-per-page dramatically compared with cartridge printers under high-volume use.", benefit: "Appeals to home-office and study customers tired of buying ink every month." },
+    { id: "c20", zoneId: "tech", name: "Portable External SSD", tags: "ssd external storage hard drive usb-c backup", feature: "Compact NVMe-based drive offering near-instant transfer speeds over USB-C.", advantage: "Backs up or moves large video and photo libraries in minutes instead of hours.", benefit: "A quick, low-cost add-on for any laptop, camera, or console purchase." },
+
+    // ZONE 2: APPLIANCES & AV (20)
+    { id: "c21", zoneId: "appliances", name: "LG OLED evo 4K Smart TV", tags: "tv television lg oled evo sound screen wall", feature: "Individually dimmable self-lit pixels without a standard backlight layer.", advantage: "Reaches near-absolute black levels with effectively infinite contrast natively.", benefit: "Turns movie night into a premium cinematic event with true-to-life depth." },
+    { id: "c22", zoneId: "appliances", name: "Samsung Neo QLED TV", tags: "samsung neo qled tv mini led screen", feature: "Mini-LED backlight with Quantum Matrix local dimming.", advantage: "Delivers bright, vivid HDR highlights even in a daylight-lit living room.", benefit: "A strong alternative for customers who want a bright, room-friendly TV over OLED." },
+    { id: "c23", zoneId: "appliances", name: "Premium Atmos Soundbar System", tags: "soundbar sound speaker audio atmos samsung sonos bose", feature: "Multi-channel drivers that reflect directional sound off the ceiling.", advantage: "Decodes Dolby Atmos to place audio behind and around the seating area.", benefit: "Brings spatial cinema sound home without running wires around the room." },
+    { id: "c24", zoneId: "appliances", name: "Dyson Cordless Stick Vacuum", tags: "dyson vacuum stick floor clean carpet v15 gen5", feature: "High-RPM cyclonic suction tracking microscopic particles with laser illumination.", advantage: "Lights up hidden dust on hard flooring while auto-scaling suction strength.", benefit: "Deep-cleans flooring with visible proof of results shown on the display." },
+    { id: "c25", zoneId: "appliances", name: "Robotic Vacuum Cleaner", tags: "robot vacuum robotic cleaner auto empty mapping", feature: "Lidar or camera-based room mapping with an auto-empty base station.", advantage: "Cleans floors on a schedule and empties itself without daily input.", benefit: "Saves time-poor households a weekly chore they'd otherwise put off." },
+    { id: "c26", zoneId: "appliances", name: "De'Longhi La Specialista Coffee Machine", tags: "coffee machine cafe espresso delonghi breville grinder", feature: "Automated tamping lever paired with dual thermoblock heaters.", advantage: "Delivers clean extraction without messy loose-coffee spills at the filter head.", benefit: "Lets you pull authentic, cafe-quality flat whites and espresso at home." },
+    { id: "c27", zoneId: "appliances", name: "Fisher & Paykel French Door Fridge", tags: "fridge freezer fisher paykel refrigeration kitchen whiteware", feature: "ActiveSmart humidity management that adapts to household usage patterns.", advantage: "Regulates interior air curtains to smooth temperature swings after door closures.", benefit: "Keeps groceries and produce fresher for longer, cutting weekly food waste." },
+    { id: "c28", zoneId: "appliances", name: "Miele Front Loader Washing Machine", tags: "washing machine laundry washer front load miele bosch", feature: "Honeycomb anti-friction drum linked to an automated twin-dose detergent system.", advantage: "Precisely doses detergent based on sensor readings to protect delicate fibres.", benefit: "Protects expensive clothing from wear while cutting annual detergent costs." },
+    { id: "c29", zoneId: "appliances", name: "Heat Pump Condenser Clothes Dryer", tags: "heat pump dryer condenser clothes laundry aeg energy", feature: "Heat-pump technology that recycles warm air instead of venting it outside.", advantage: "Dries clothes gently at lower temperatures while using far less power than a standard dryer.", benefit: "Cuts power bills and runs safely in a closed laundry with no external vent." },
+    { id: "c30", zoneId: "appliances", name: "Built-In Oven", tags: "oven built in kitchen cooking pyrolytic", feature: "Multi-function fan-forced oven with pyrolytic self-cleaning.", advantage: "Burns off baked-on residue automatically instead of needing manual scrubbing.", benefit: "Saves real cleaning time for households that cook often." },
+    { id: "c31", zoneId: "appliances", name: "Induction Cooktop", tags: "induction cooktop kitchen cooking electric stove", feature: "Magnetic induction elements that heat the pan directly, not the glass surface.", advantage: "Boils water faster than gas or ceramic and stays cool to the touch around the pan.", benefit: "A safer cooktop option for households with young children." },
+    { id: "c32", zoneId: "appliances", name: "Dishwasher", tags: "dishwasher kitchen quiet wash cycle", feature: "Multiple wash zones with a quiet sub-40dB operating cycle.", advantage: "Runs overnight without disturbing the household while still handling heavily soiled pots.", benefit: "Frees up time for families who'd rather not hand-wash after dinner." },
+    { id: "c33", zoneId: "appliances", name: "Air Fryer", tags: "air fryer kitchen cooking healthy oil free", feature: "Rapid hot-air circulation reaching high temperatures with little to no oil.", advantage: "Crisps food in a fraction of the time a conventional oven takes.", benefit: "A fast, lower-fat way to cook weeknight meals for busy households." },
+    { id: "c34", zoneId: "appliances", name: "Microwave", tags: "microwave kitchen inverter reheat defrost", feature: "Inverter technology delivering consistent power instead of pulsed on/off heating.", advantage: "Defrosts and reheats food evenly without overcooking the edges.", benefit: "A reliable everyday kitchen tool that suits almost every household." },
+    { id: "c35", zoneId: "appliances", name: "Split System Heat Pump / Air Conditioner", tags: "heat pump air conditioner split system mitsubishi panasonic heating cooling", feature: "Reverse-cycle operation that both heats and cools from one indoor/outdoor unit.", advantage: "Heats a room efficiently in winter and cools it in summer from the same installation.", benefit: "One purchase covers year-round comfort instead of separate heaters and fans." },
+    { id: "c36", zoneId: "appliances", name: "Dehumidifier & Air Purifier", tags: "dehumidifier air purifier hepa moisture mould", feature: "Combined moisture extraction with HEPA filtration.", advantage: "Reduces damp, mould risk, and airborne allergens in one appliance.", benefit: "A practical fit for New Zealand's damper regions and older homes." },
+    { id: "c37", zoneId: "appliances", name: "Electric Blanket", tags: "electric blanket heating bedroom winter", feature: "Dual-zone heating with washable, machine-safe wiring.", advantage: "Pre-warms the bed before climbing in without heating the whole bedroom.", benefit: "A low-cost winter comfort upsell that pairs naturally with any bedding sale." },
+    { id: "c38", zoneId: "appliances", name: "Stand Mixer", tags: "stand mixer kitchen baking kitchenaid", feature: "Planetary mixing action with multiple attachments (whisk, dough hook, beater).", advantage: "Handles everything from whipped cream to bread dough without manual effort.", benefit: "A popular gift item and a strong add-on to any kitchen appliance sale." },
+    { id: "c39", zoneId: "appliances", name: "Wine Cooler", tags: "wine cooler fridge dual zone kitchen", feature: "Dual-zone temperature control for reds and whites in the same unit.", advantage: "Keeps each wine style at its correct serving temperature year-round.", benefit: "A premium addition for kitchen renovations and entertaining-focused households." },
+    { id: "c40", zoneId: "appliances", name: "Rangehood", tags: "rangehood extraction kitchen ventilation cooktop", feature: "High-extraction fan sized to the cooktop, with multiple speed settings.", advantage: "Clears cooking smoke, steam, and odours before they spread through the home.", benefit: "An essential pairing whenever a customer buys a new cooktop or oven." },
+
+    // ZONE 3: FURNITURE & LIVING (20)
+    { id: "c41", zoneId: "furniture", name: "NZ Made Bespoke Fabric Lounge Suite", tags: "sofa couch lounge suite fabric nz made local custom", feature: "Hand-assembled frames built from kiln-dried native timber.", advantage: "Fully customisable scale and dozens of fabric options to choose from.", benefit: "Provides reliable structural integrity tailored to your exact home layout." },
+    { id: "c42", zoneId: "furniture", name: "Recliner Lounge Chair", tags: "chair recliner lazboy la-z-boy leather seat comfort rocker", feature: "Independent reclining backrest mechanism with a long-term structural warranty.", advantage: "Maintains lumbar support even while reclined fully backward.", benefit: "Creates a reliable, ergonomic relaxation spot for the end of a long day.", note: "Brand availability varies by store — some locations sell this as an independently operated concession (e.g. La-Z-Boy Gallery), not Harvey Norman's own stock. Confirm locally." },
+    { id: "c43", zoneId: "furniture", name: "Leather Sofa", tags: "leather sofa couch lounge living room", feature: "Top-grain leather upholstery over a hardwood frame.", advantage: "Wipes clean easily and develops a worn-in look that ages well over years of use.", benefit: "A durable choice for households with kids, pets, or heavy daily use." },
+    { id: "c44", zoneId: "furniture", name: "Sofa Bed", tags: "sofa bed fold out guest spare bed living room", feature: "Fold-out mechanism converting from a sofa to a queen or double bed.", advantage: "Doubles as everyday seating and a spare bed without needing a dedicated guest room.", benefit: "Ideal for smaller homes or apartments that need flexible space." },
+    { id: "c45", zoneId: "furniture", name: "Corner Modular Lounge Suite", tags: "modular corner lounge suite sectional sofa", feature: "Independent modular sections that can be rearranged or reconfigured.", advantage: "Adapts to different room shapes and can be split into separate pieces later.", benefit: "Future-proofs the purchase for customers who may move house or rearrange." },
+    { id: "c46", zoneId: "furniture", name: "Solid Timber Dining Suite", tags: "table dining chair suite timber oak wood furniture", feature: "Full-grain solid oak construction with matching bench seating.", advantage: "Offers better resistance to surface impact than low-grade veneer.", benefit: "A long-lasting centrepiece for family gatherings that can be restored over decades." },
+    { id: "c47", zoneId: "furniture", name: "Extendable Dining Table", tags: "extendable dining table leaf seating", feature: "Built-in leaf mechanism that extends seating capacity without extra storage.", advantage: "Seats a small family day-to-day and expands for guests or holidays.", benefit: "One table that covers everyday meals and larger gatherings." },
+    { id: "c48", zoneId: "furniture", name: "Bar Stools Set", tags: "bar stools kitchen island bench seating", feature: "Adjustable-height gas-lift base with a footrest ring.", advantage: "Suits kitchen islands and benches of different heights in the same set.", benefit: "A simple, affordable add-on for any kitchen or open-plan renovation." },
+    { id: "c49", zoneId: "furniture", name: "Premium Ergonomic Desk & Chair Combo", tags: "desk chair office ergonomic work study stand dual motor", feature: "Dual-motor electric sit-to-stand desk paired with an adjustable mesh chair.", advantage: "Allows quick height changes under a heavy monitor setup with no manual lifting.", benefit: "Wards off fatigue during long remote work shifts by encouraging movement." },
+    { id: "c50", zoneId: "furniture", name: "Office Chair", tags: "office chair ergonomic desk lumbar work from home", feature: "Adjustable lumbar support, armrests, and seat depth on a five-star castor base.", advantage: "Adapts to different body types and desk heights for all-day comfort.", benefit: "A strong standalone seller for the growing work-from-home market." },
+    { id: "c51", zoneId: "furniture", name: "Entertainment / TV Unit", tags: "tv unit entertainment cabinet living room storage", feature: "Cable management channels and ventilated shelving for AV equipment.", advantage: "Keeps consoles, soundbars, and cables tidy and properly ventilated.", benefit: "A natural pairing whenever a customer buys a new TV in Zone 2." },
+    { id: "c52", zoneId: "furniture", name: "Coffee Table", tags: "coffee table living room lounge storage", feature: "Tempered glass or solid timber top with a lower storage shelf.", advantage: "Adds practical surface space and storage without crowding a lounge layout.", benefit: "An easy, low-cost finishing piece for any lounge suite sale." },
+    { id: "c53", zoneId: "furniture", name: "Bookcase & Display Shelving", tags: "bookcase shelving display storage living room", feature: "Adjustable shelf heights on a solid frame.", advantage: "Reconfigures to fit books, décor, or storage boxes as needs change.", benefit: "A flexible storage solution that suits almost any living room." },
+    { id: "c54", zoneId: "furniture", name: "Outdoor Dining Setting", tags: "outdoor dining table chairs patio deck", feature: "Weather-resistant aluminium or all-weather wicker construction.", advantage: "Stays outside year-round without rusting, fading, or needing constant covering.", benefit: "Turns a deck or patio into usable entertaining space." },
+    { id: "c55", zoneId: "furniture", name: "Gas BBQ", tags: "bbq gas grill outdoor cooking summer", feature: "Multiple stainless steel burners with a built-in side searing station.", advantage: "Heats quickly and evenly across a larger cooking surface than charcoal.", benefit: "A popular big-ticket sale heading into spring and summer." },
+    { id: "c56", zoneId: "furniture", name: "Outdoor Lounge Setting", tags: "outdoor lounge setting patio sofa cushions", feature: "UV-stabilised cushions on a rust-resistant aluminium frame.", advantage: "Handles sun and rain exposure without fading or corroding like standard fabric.", benefit: "Pairs naturally with a BBQ or outdoor dining sale for a full backyard setup." },
+    { id: "c57", zoneId: "furniture", name: "Massage Chair", tags: "massage chair recliner wellness zero gravity", feature: "Multi-point rollers with zero-gravity recline and heat therapy.", advantage: "Targets the back, neck, and legs automatically through programmed massage routines.", benefit: "A premium wellness purchase that stands out as a statement lounge piece." },
+    { id: "c58", zoneId: "furniture", name: "Floor & Table Lamp Set", tags: "floor lamp table lamp lighting decor living room", feature: "Layered warm/cool LED colour temperature options.", advantage: "Adjusts a room's mood and brightness without rewiring or new fittings.", benefit: "An easy accessory upsell alongside any furniture purchase." },
+    { id: "c59", zoneId: "furniture", name: "Area Rug", tags: "rug area carpet living room decor", feature: "Dense pile weave available in multiple standard room sizes.", advantage: "Anchors a furniture layout and softens hard flooring underfoot.", benefit: "A finishing touch that noticeably lifts the look of a lounge or dining sale." },
+    { id: "c60", zoneId: "furniture", name: "Nursery Glider Chair", tags: "nursery glider chair rocking baby feeding", feature: "Smooth gliding mechanism with a reclining backrest and padded armrests.", advantage: "Rocks gently and quietly for late-night feeding or settling a baby.", benefit: "A frequently requested item for customers furnishing a nursery." },
+
+    // ZONE 4: BEDDING & BEDROOM (20)
+    { id: "c61", zoneId: "bedding", name: "Sealy Posturepedic Premium Mattress", tags: "bed mattress sleep sealy posturepedic spring king queen", feature: "Titanium-alloy support coils layered with high-density pressure foam.", advantage: "Senses weight load to provide firmer support where the body sits deepest.", benefit: "Helps correct sleeping posture and reduce morning back pain or stiffness." },
+    { id: "c62", zoneId: "bedding", name: "Tempur Contour Memory Foam Mattress", tags: "tempur mattress foam memory sleep motion isolation", feature: "NASA-derived temperature-sensitive viscoelastic material.", advantage: "Distributes weight evenly for genuine point-to-point motion isolation.", benefit: "Means zero sleep disruption even if a partner moves often through the night." },
+    { id: "c63", zoneId: "bedding", name: "Beautyrest Pocket Spring Mattress", tags: "beautyrest mattress pocket spring sleep king queen", feature: "Individually wrapped pocket springs that move independently of each other.", advantage: "Reduces motion transfer between sleeping partners compared with a single connected spring unit.", benefit: "A strong option for couples with different sleep schedules or movement patterns." },
+    { id: "c64", zoneId: "bedding", name: "Adjustable Bed Base", tags: "adjustable bed base electric recline head foot", feature: "Electric head and foot articulation with multiple memory positions.", advantage: "Lets the sleeper sit up, elevate their legs, or find a custom angle at the touch of a button.", benefit: "Popular with older customers and anyone managing back pain or reflux." },
+    { id: "c65", zoneId: "bedding", name: "Storage Bed Base", tags: "storage bed base drawers gas lift bedroom", feature: "Gas-lift or drawer storage built into the base itself.", advantage: "Reclaims usable space under the mattress without a separate storage unit.", benefit: "A practical pick for smaller bedrooms or apartments." },
+    { id: "c66", zoneId: "bedding", name: "Luxury Storage Bed Frame & Headboard", tags: "bed frame headboard base velvet bedroom storage king", feature: "Upholstered surround frame with internal gas-lift storage cavities.", advantage: "Hides bulky seasonal items like duvets and luggage beneath the mattress.", benefit: "Keeps a minimalist bedroom clear of clutter without needing extra drawers." },
+    { id: "c67", zoneId: "bedding", name: "Upholstered Headboard", tags: "headboard upholstered fabric leather bedroom", feature: "Padded fabric or leather-look panel on a freestanding frame.", advantage: "Adds a softer backrest for reading or sitting up in bed.", benefit: "An easy way to refresh a bedroom's look without replacing the whole bed." },
+    { id: "c68", zoneId: "bedding", name: "Bedside Table Pair", tags: "bedside table nightstand drawers bedroom pair", feature: "Matching drawer-and-shelf units sold as a set.", advantage: "Keeps both sides of the bed symmetrical and gives each sleeper their own storage.", benefit: "A simple add-on sale alongside any new bed or suite." },
+    { id: "c69", zoneId: "bedding", name: "Dresser / Chest of Drawers", tags: "dresser drawers chest bedroom storage", feature: "Soft-close drawer runners on a solid frame.", advantage: "Holds significantly more folded clothing than a wardrobe shelf alone.", benefit: "Frequently bundled with a new bedroom suite purchase." },
+    { id: "c70", zoneId: "bedding", name: "Matching Bedroom Suite", tags: "bedroom suite matching set bed dresser bedside", feature: "Bed frame, dresser, and bedside tables built in the same finish and hardware.", advantage: "Saves the customer from matching separate pieces themselves.", benefit: "A higher-value bundle sale compared with single bedroom items." },
+    { id: "c71", zoneId: "bedding", name: "Kids Bunk Bed", tags: "kids bunk bed children bedroom safety rail", feature: "Solid timber or metal frame with an integrated safety rail and ladder.", advantage: "Sleeps two children in the footprint of one, freeing up floor space for play.", benefit: "A practical solution for shared kids' bedrooms." },
+    { id: "c72", zoneId: "bedding", name: "Egyptian Cotton Manchester Sheet Set", tags: "sheet pillow manchester linen cotton duvet inner", feature: "Long-staple Egyptian combed yarn in an ultra-dense thread-count weave.", advantage: "Delivers strong breathability alongside years of wash durability.", benefit: "Feels like a soft hotel-tier sheet that stays cool in summer, cosy in winter." },
+    { id: "c73", zoneId: "bedding", name: "Duvet Inner (Warmth-Rated)", tags: "duvet inner warmth gsm winter summer bedding", feature: "Warmth-rated in GSM/togs, available in summer, all-season, and winter weights.", advantage: "Matches the inner to the season instead of using one duvet year-round.", benefit: "Lets customers stay comfortable without overheating or layering extra blankets." },
+    { id: "c74", zoneId: "bedding", name: "Duvet Cover & Pillowcase Set", tags: "duvet cover pillowcase set bedding bedroom", feature: "Coordinated cover and pillowcases in a range of weaves and patterns.", advantage: "Refreshes a bedroom's look quickly without replacing the mattress or frame.", benefit: "A fast, affordable styling sale for customers redecorating." },
+    { id: "c75", zoneId: "bedding", name: "Memory Foam Pillow", tags: "memory foam pillow contour neck support sleep", feature: "Contoured foam that moulds to the head and neck shape.", advantage: "Maintains spinal alignment better than a standard fibre-fill pillow.", benefit: "A common pairing with any new mattress sale, especially for neck-pain customers." },
+    { id: "c76", zoneId: "bedding", name: "Mattress & Pillow Protector Set", tags: "mattress protector pillow protector waterproof bedding", feature: "Waterproof, breathable membrane that's fully machine washable.", advantage: "Shields a new mattress from spills and allergens without trapping heat.", benefit: "Protects the customer's mattress warranty and is an easy add-on at checkout." },
+    { id: "c77", zoneId: "bedding", name: "Mattress Topper", tags: "mattress topper foam wool comfort upgrade", feature: "A few centimetres of memory foam or wool laid over the existing mattress.", advantage: "Softens or refreshes an ageing mattress without buying a whole new one.", benefit: "A lower-cost comfort upgrade for budget-conscious customers." },
+    { id: "c78", zoneId: "bedding", name: "Cushions & Throws", tags: "cushions throws bed decor bedroom styling", feature: "Coordinated textured cushions and a soft knit or faux-fur throw.", advantage: "Adds layered texture and colour to a finished bed or lounge styling.", benefit: "A simple, high-margin add-on at the end of any bedroom sale." },
+    { id: "c79", zoneId: "bedding", name: "Bedroom Lamp & Mirror Decor", tags: "bedroom lamp mirror decor lighting bedside", feature: "Matching bedside lamp and wall or freestanding mirror set.", advantage: "Completes a bedroom's styling and adds practical task lighting.", benefit: "An easy finishing upsell once the bigger furniture decision is made." },
+    { id: "c80", zoneId: "bedding", name: "Single/King Single Bed Package", tags: "single king single bed package kids guest bedroom", feature: "A complete bed frame and mattress bundle sized for kids', guest, or single rooms.", advantage: "Removes the guesswork of matching a frame and mattress separately.", benefit: "A straightforward, ready-to-go sale for guest rooms or a child's first single bed." }
+  ];
+
+
+  /* ============================ STATE / STORAGE ============================ */
+  var LS = {
+    zones: "hnfc_zones_v2",
+    catalog: "hnfc_catalog_v2",
+    theme: "hnfc_theme_v2",
+    hunt: "hnfc_hunt_v2",
+    cardIndex: "hnfc_cardidx_v2",
+    cardZone: "hnfc_cardzone_v2",
+    quizMode: "hnfc_quizmode_v2"
+  };
+
+  function loadJSON(key, fallback) {
+    try {
+      var raw = localStorage.getItem(key);
+      if (raw === null) return fallback;
+      return JSON.parse(raw);
+    } catch (e) { return fallback; }
+  }
+  function save(key, value) {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* storage unavailable */ }
+  }
+  function uid(prefix) {
+    return prefix + "_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  }
+  function escapeHtml(str) {
+    return String(str == null ? "" : str)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  var zones = loadJSON(LS.zones, null) || JSON.parse(JSON.stringify(DEFAULT_ZONES));
+  var catalog = loadJSON(LS.catalog, null) || JSON.parse(JSON.stringify(DEFAULT_CATALOG));
+  var huntProgress = loadJSON(LS.hunt, {});
+  var quizMode = loadJSON(LS.quizMode, false);
+  var cardZoneFilter = loadJSON(LS.cardZone, "all");
+  var cardIndex = loadJSON(LS.cardIndex, 0);
+  var deckQueue = [];
+  var quizScore = { correct: 0, review: 0 };
+  var pitchRevealed = false;
+  var activeZoneId = null;
+
+  function zoneById(id) { return zones.filter(function (z) { return z.id === id; })[0] || null; }
+  function zoneColor(zone) {
+    var idx = (zone && typeof zone.colorIndex === "number") ? zone.colorIndex : 0;
+    return ZONE_PALETTE[idx % ZONE_PALETTE.length];
+  }
+  function zoneCode(zone) {
+    var i = zones.indexOf(zone);
+    return "Z" + (i + 1);
+  }
+
+  /* ============================ THEME ============================ */
+  var ICON_SUN = '<circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path>';
+  var ICON_MOON = '<path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"></path>';
+
+  function getInitialTheme() {
+    var stored = loadJSON(LS.theme, null);
+    if (stored === "light" || stored === "dark") return stored;
+    try {
+      if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) return "light";
+    } catch (e) {}
+    return "dark";
+  }
+  var theme = getInitialTheme();
+
+  function applyTheme() {
+    document.documentElement.setAttribute("data-theme", theme);
+    var btn = document.getElementById("theme-toggle");
+    var icon = document.getElementById("theme-icon");
+    btn.setAttribute("aria-pressed", theme === "light" ? "true" : "false");
+    btn.setAttribute("aria-label", theme === "light" ? "Switch to dark mode" : "Switch to bright mode");
+    icon.innerHTML = theme === "light" ? ICON_SUN : ICON_MOON;
+  }
+  document.getElementById("theme-toggle").addEventListener("click", function () {
+    theme = theme === "light" ? "dark" : "light";
+    save(LS.theme, theme);
+    applyTheme();
+  });
+
+  /* ============================ TABS ============================ */
+  function switchTab(tabId) {
+    document.querySelectorAll(".tab-view").forEach(function (v) { v.classList.add("hidden"); });
+    document.getElementById("view-" + tabId).classList.remove("hidden");
+    document.querySelectorAll(".nav-btn").forEach(function (b) { b.classList.remove("is-active"); });
+    document.getElementById("nav-" + tabId).classList.add("is-active");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  document.querySelectorAll(".nav-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () { switchTab(btn.getAttribute("data-tab")); });
+  });
+
+  /* ============================ STAT PILL ============================ */
+  function renderStatPill() {
+    document.getElementById("stat-pill").textContent = catalog.length + " Hero Items · " + zones.length + " Zones";
+  }
+
+  /* ============================ MAP TAB ============================ */
+  function renderZoneGrid() {
+    var grid = document.getElementById("zone-grid");
+    grid.innerHTML = "";
+    zones.forEach(function (zone, idx) {
+      var rgb = zoneColor(zone);
+      var btn = document.createElement("button");
+      btn.className = "zone-btn" + (activeZoneId === zone.id ? " is-active" : "");
+      btn.style.setProperty("--zc", rgb);
+      btn.innerHTML =
+        '<span class="zone-code">' + escapeHtml(zoneCode(zone)) + '</span>' +
+        '<span>' +
+          '<span class="zone-label">' + escapeHtml(zone.label) + '</span>' +
+          '<span class="zone-loc">' + escapeHtml(zone.location) + '</span>' +
+        '</span>';
+      btn.addEventListener("click", function () { selectZone(zone.id); });
+      grid.appendChild(btn);
+    });
+    if (!zones.length) {
+      grid.innerHTML = '<div class="zone-empty">No zones yet — add one from the gear menu.</div>';
+    }
+  }
+
+  function selectZone(zoneId) {
+    activeZoneId = zoneId;
+    renderZoneGrid();
+    var zone = zoneById(zoneId);
+    var panel = document.getElementById("zone-details");
+    if (!zone) { panel.innerHTML = '<div class="zone-empty">Tap any zone above to see its categories.</div>'; return; }
+    var cats = zone.categories.map(function (c) { return '<div class="zone-cat">' + escapeHtml(c) + '</div>'; }).join("");
+    var heroBlock = "";
+    if (zone.heroItem && zone.heroItem.name) {
+      heroBlock =
+        '<div class="zone-hero">' +
+          '<div class="zone-hero-label">📌 Floor hunt target</div>' +
+          '<div class="zone-hero-name">' + escapeHtml(zone.heroItem.name) + '</div>' +
+          (zone.heroItem.hint ? '<div class="zone-hero-hint">' + escapeHtml(zone.heroItem.hint) + '</div>' : '') +
+        '</div>';
+    }
+    panel.innerHTML =
+      '<h3>' + escapeHtml(zoneCode(zone)) + ': ' + escapeHtml(zone.label) + '</h3>' +
+      '<p class="zone-path">📍 ' + escapeHtml(zone.location) + '</p>' +
+      '<div class="zone-cats">' + cats + '</div>' +
+      heroBlock +
+      '<div class="btn-link-row">' +
+        '<button class="btn btn-primary btn-full" id="jump-to-cards">Practice flashcards for this zone →</button>' +
+      '</div>';
+    document.getElementById("jump-to-cards").addEventListener("click", function () {
+      cardZoneFilter = zoneId;
+      save(LS.cardZone, cardZoneFilter);
+      buildDeck(true);
+      renderCardZoneFilterSelect();
+      renderCard();
+      switchTab("cards");
+    });
+  }
+
+  /* ============================ HUNT TAB ============================ */
+  function renderHunt() {
+    var list = document.getElementById("hunt-list");
+    list.innerHTML = "";
+    var huntZones = zones.filter(function (z) { return z.heroItem && z.heroItem.name; });
+    var found = 0;
+    huntZones.forEach(function (zone) {
+      var rgb = zoneColor(zone);
+      var done = !!huntProgress[zone.id];
+      if (done) found++;
+      var row = document.createElement("div");
+      row.className = "hunt-row" + (done ? " is-done" : "");
+      row.innerHTML =
+        '<div>' +
+          '<span class="hunt-zone-tag" style="--zc:' + rgb + '">' + escapeHtml(zoneCode(zone)) + '</span>' +
+          '<h3>' + escapeHtml(zone.heroItem.name) + '</h3>' +
+          '<p>' + escapeHtml(zone.heroItem.hint || "") + '</p>' +
+        '</div>' +
+        '<button class="btn ' + (done ? "btn-success" : "btn-primary") + ' btn-sm" data-zone="' + escapeHtml(zone.id) + '">' +
+          (done ? "✓ Logged" : "Found") +
+        '</button>';
+      row.querySelector("button").addEventListener("click", function () {
+        huntProgress[zone.id] = !huntProgress[zone.id];
+        save(LS.hunt, huntProgress);
+        renderHunt();
+      });
+      list.appendChild(row);
+    });
+    if (!huntZones.length) {
+      list.innerHTML = '<div class="zone-empty">No hunt targets set yet. Add a hero item to a zone from the gear menu.</div>';
+    }
+    document.getElementById("hunt-score").textContent = found + "/" + huntZones.length + " Found";
+  }
+  document.getElementById("hunt-reset").addEventListener("click", function () {
+    if (confirm("Reset all floor hunt progress?")) {
+      huntProgress = {};
+      save(LS.hunt, huntProgress);
+      renderHunt();
+    }
+  });
+
+  /* ============================ CARDS TAB ============================ */
+  function renderCardZoneFilterSelect() {
+    var sel = document.getElementById("card-zone-filter");
+    var options = ['<option value="all">All zones</option>'];
+    zones.forEach(function (z) {
+      options.push('<option value="' + escapeHtml(z.id) + '"' + (cardZoneFilter === z.id ? " selected" : "") + '>' + escapeHtml(zoneCode(z)) + ': ' + escapeHtml(z.label) + '</option>');
+    });
+    sel.innerHTML = options.join("");
+    sel.value = zones.some(function (z) { return z.id === cardZoneFilter; }) ? cardZoneFilter : "all";
+  }
+  document.getElementById("card-zone-filter").addEventListener("change", function (e) {
+    cardZoneFilter = e.target.value;
+    save(LS.cardZone, cardZoneFilter);
+    buildDeck(true);
+    renderCard();
+  });
+
+  function buildDeck(resetIndex) {
+    var filtered = cardZoneFilter === "all" ? catalog.slice() : catalog.filter(function (c) { return c.zoneId === cardZoneFilter; });
+    deckQueue = filtered.map(function (c) { return c.id; });
+    if (resetIndex || cardIndex >= deckQueue.length) cardIndex = 0;
+    save(LS.cardIndex, cardIndex);
+  }
+
+  function setMode(mode) {
+    quizMode = mode === "quiz";
+    save(LS.quizMode, quizMode);
+    document.getElementById("mode-study").classList.toggle("is-active", !quizMode);
+    document.getElementById("mode-quiz").classList.toggle("is-active", quizMode);
+    quizScore = { correct: 0, review: 0 };
+    pitchRevealed = false;
+    renderCard();
+  }
+  document.getElementById("mode-study").addEventListener("click", function () { setMode("study"); });
+  document.getElementById("mode-quiz").addEventListener("click", function () { setMode("quiz"); });
+
+  document.getElementById("card-shuffle").addEventListener("click", function () {
+    for (var i = deckQueue.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = deckQueue[i]; deckQueue[i] = deckQueue[j]; deckQueue[j] = t;
+    }
+    cardIndex = 0;
+    save(LS.cardIndex, cardIndex);
+    pitchRevealed = false;
+    renderCard();
+  });
+
+  function flipCard() {
+    var inner = document.getElementById("flashcard");
+    inner.classList.toggle("is-flipped");
+  }
+  document.getElementById("flip-zone").addEventListener("click", flipCard);
+
+  function currentCatalogItem() {
+    if (!deckQueue.length) return null;
+    var id = deckQueue[cardIndex];
+    return catalog.filter(function (c) { return c.id === id; })[0] || null;
+  }
+
+  function renderCard() {
+    var item = currentCatalogItem();
+    var inner = document.getElementById("flashcard");
+    inner.classList.remove("is-flipped");
+    pitchRevealed = false;
+
+    if (!item) {
+      document.getElementById("card-zone-tag").textContent = "—";
+      document.getElementById("card-title").textContent = "No items in this zone yet";
+      document.getElementById("card-sub").textContent = "Add catalog items from the gear menu.";
+      document.getElementById("card-note-front").style.display = "none";
+      document.getElementById("card-feature").textContent = "";
+      document.getElementById("card-advantage").textContent = "";
+      document.getElementById("card-benefit").textContent = "";
+      document.getElementById("card-indicator").textContent = "0 / 0";
+      updateQuizUI(null);
+      return;
+    }
+
+    var zone = zoneById(item.zoneId);
+    document.getElementById("card-zone-tag").textContent = zone ? (zoneCode(zone) + ": " + zone.label) : "Unassigned";
+    document.getElementById("card-title").textContent = item.name;
+    document.getElementById("card-sub").textContent = zone ? zone.location : "";
+    var noteEl = document.getElementById("card-note-front");
+    if (item.note) { noteEl.style.display = "block"; noteEl.textContent = "⚠ " + item.note; }
+    else { noteEl.style.display = "none"; }
+
+    document.getElementById("card-feature").textContent = item.feature;
+    document.getElementById("card-advantage").textContent = item.advantage;
+    document.getElementById("card-benefit").textContent = item.benefit;
+    document.getElementById("card-indicator").textContent = (deckQueue.length ? (cardIndex + 1) : 0) + " / " + deckQueue.length;
+    document.getElementById("flip-hint-front").textContent = quizMode ? "🔄 Tap card to begin quiz" : "🔄 Tap card to view pitch script";
+
+    updateQuizUI(item);
+  }
+
+  function updateQuizUI(item) {
+    var revealBtn = document.getElementById("quiz-reveal-btn");
+    var answerRow = document.getElementById("quiz-answer-row");
+    var benefitBox = document.getElementById("benefit-box");
+    var scoreEl = document.getElementById("quiz-score");
+
+    if (!item || !quizMode) {
+      revealBtn.classList.add("hidden");
+      answerRow.classList.add("hidden");
+      benefitBox.classList.remove("hidden");
+      scoreEl.classList.add("hidden");
+      return;
+    }
+    scoreEl.classList.remove("hidden");
+    scoreEl.textContent = "✅ " + quizScore.correct + " got it · 🔁 " + quizScore.review + " reviewing";
+    if (pitchRevealed) {
+      revealBtn.classList.add("hidden");
+      benefitBox.classList.remove("hidden");
+      answerRow.classList.remove("hidden");
+    } else {
+      revealBtn.classList.remove("hidden");
+      benefitBox.classList.add("hidden");
+      answerRow.classList.add("hidden");
+    }
+  }
+
+  document.getElementById("quiz-reveal-btn").addEventListener("click", function (e) {
+    e.stopPropagation();
+    pitchRevealed = true;
+    updateQuizUI(currentCatalogItem());
+  });
+  document.getElementById("quiz-got-it").addEventListener("click", function (e) {
+    e.stopPropagation();
+    quizScore.correct++;
+    advanceCard(1);
+  });
+  document.getElementById("quiz-review-again").addEventListener("click", function (e) {
+    e.stopPropagation();
+    quizScore.review++;
+    var id = deckQueue[cardIndex];
+    if (id) deckQueue.push(id);
+    advanceCard(1);
+  });
+
+  function advanceCard(dir) {
+    if (!deckQueue.length) return;
+    cardIndex = (cardIndex + dir + deckQueue.length) % deckQueue.length;
+    save(LS.cardIndex, cardIndex);
+    renderCard();
+  }
+  document.getElementById("card-next").addEventListener("click", function (e) { e.stopPropagation(); advanceCard(1); });
+  document.getElementById("card-prev").addEventListener("click", function (e) { e.stopPropagation(); advanceCard(-1); });
+
+  /* ============================ SEARCH TAB ============================ */
+  var searchZoneFilter = "all";
+  function renderSearchChips() {
+    var row = document.getElementById("search-chips");
+    var chips = ['<button class="chip' + (searchZoneFilter === "all" ? " is-active" : "") + '" data-zone="all">All</button>'];
+    zones.forEach(function (z) {
+      chips.push('<button class="chip' + (searchZoneFilter === z.id ? " is-active" : "") + '" style="--zc:' + zoneColor(z) + '" data-zone="' + escapeHtml(z.id) + '">' + escapeHtml(zoneCode(z)) + ' ' + escapeHtml(z.label) + '</button>');
+    });
+    row.innerHTML = chips.join("");
+    row.querySelectorAll(".chip").forEach(function (chip) {
+      chip.addEventListener("click", function () {
+        searchZoneFilter = chip.getAttribute("data-zone");
+        renderSearchChips();
+        runSearch();
+      });
+    });
+  }
+
+  function runSearch() {
+    var val = document.getElementById("search-input").value.toLowerCase().trim();
+    var box = document.getElementById("search-results");
+    var pool = searchZoneFilter === "all" ? catalog : catalog.filter(function (c) { return c.zoneId === searchZoneFilter; });
+
+    var matched = pool;
+    if (val !== "") {
+      matched = pool.filter(function (i) {
+        var zone = zoneById(i.zoneId);
+        var haystack = (i.name + " " + i.tags + " " + (zone ? zone.label : "")).toLowerCase();
+        return haystack.indexOf(val) !== -1;
+      });
+    }
+
+    if (val === "" && searchZoneFilter === "all") {
+      box.innerHTML = '<div class="empty-state">Type a keyword, or pick a zone above, while standing next to a customer to get an instant answer.</div>';
+      return;
+    }
+    if (!matched.length) {
+      box.innerHTML = '<div class="empty-state is-error">No hero items match that search.</div>';
+      return;
+    }
+
+    box.innerHTML = matched.map(function (item) {
+      var zone = zoneById(item.zoneId);
+      var noteLine = item.note ? '<p class="result-line" style="color:#f0ad2b;"><strong>⚠ Note</strong>' + escapeHtml(item.note) + '</p>' : "";
+      return (
+        '<div class="result-card">' +
+          '<div class="result-head">' +
+            '<h3>' + escapeHtml(item.name) + '</h3>' +
+            '<span class="result-tag">' + escapeHtml(zone ? zoneCode(zone) : "?") + '</span>' +
+          '</div>' +
+          '<p class="result-line"><strong>Feature</strong>' + escapeHtml(item.feature) + '</p>' +
+          '<p class="result-line"><strong>Advantage</strong>' + escapeHtml(item.advantage) + '</p>' +
+          '<p class="result-line pitch"><strong>Value Pitch Script</strong>"' + escapeHtml(item.benefit) + '"</p>' +
+          noteLine +
+        '</div>'
+      );
+    }).join("");
+  }
+  document.getElementById("search-input").addEventListener("keyup", runSearch);
+
+  /* ============================ MANAGE MODAL ============================ */
+  var modal = document.getElementById("manage-modal");
+  document.getElementById("manage-open").addEventListener("click", function () {
+    modal.classList.remove("hidden");
+    renderZonesEditor();
+    renderCatalogEditor();
+    renderExportBox();
+  });
+  function closeManage() {
+    modal.classList.add("hidden");
+    fullRerender();
+  }
+  document.getElementById("manage-close").addEventListener("click", closeManage);
+  modal.addEventListener("click", function (e) { if (e.target === modal) closeManage(); });
+
+  ["zones", "catalog", "data"].forEach(function (pane) {
+    document.getElementById("mt-" + pane).addEventListener("click", function () {
+      ["zones", "catalog", "data"].forEach(function (p) {
+        document.getElementById("pane-" + p).classList.toggle("hidden", p !== pane);
+        document.getElementById("mt-" + p).classList.toggle("btn-primary", p === pane);
+      });
+      if (pane === "data") renderExportBox();
+    });
+  });
+  document.getElementById("mt-zones").classList.add("btn-primary");
+
+  function renderZonesEditor() {
+    var wrap = document.getElementById("zones-editor");
+    wrap.innerHTML = "";
+    zones.forEach(function (zone) {
+      var card = document.createElement("div");
+      card.className = "editor-card";
+      card.innerHTML =
+        '<div class="editor-row"><label>Zone label</label><input class="field" data-zid="' + zone.id + '" data-f="label" value="' + escapeHtml(zone.label) + '"></div>' +
+        '<div class="editor-row"><label>Location in store</label><input class="field" data-zid="' + zone.id + '" data-f="location" value="' + escapeHtml(zone.location) + '"></div>' +
+        '<div class="editor-row"><label>Categories (one per line)</label><textarea class="field" rows="4" data-zid="' + zone.id + '" data-f="categories">' + escapeHtml(zone.categories.join("\n")) + '</textarea></div>' +
+        '<div class="editor-grid-2">' +
+          '<div class="editor-row"><label>Hunt target name</label><input class="field" data-zid="' + zone.id + '" data-f="heroName" value="' + escapeHtml(zone.heroItem ? zone.heroItem.name : "") + '"></div>' +
+          '<div class="editor-row"><label>Hunt hint</label><input class="field" data-zid="' + zone.id + '" data-f="heroHint" value="' + escapeHtml(zone.heroItem ? zone.heroItem.hint : "") + '"></div>' +
+        '</div>' +
+        '<div class="editor-row"><label>Accent colour</label><div class="color-row" data-zid="' + zone.id + '"></div></div>' +
+        '<div class="editor-foot"><span class="help-text">' + escapeHtml(zoneCode(zone)) + '</span><button class="btn btn-danger btn-sm" data-del-zone="' + zone.id + '">Delete zone</button></div>';
+      wrap.appendChild(card);
+
+      var colorRow = card.querySelector(".color-row");
+      ZONE_PALETTE.forEach(function (rgb, i) {
+        var dot = document.createElement("button");
+        dot.type = "button";
+        dot.className = "color-dot" + (zone.colorIndex === i ? " is-selected" : "");
+        dot.style.background = "rgb(" + rgb + ")";
+        dot.addEventListener("click", function () {
+          zone.colorIndex = i;
+          save(LS.zones, zones);
+          renderZonesEditor();
+        });
+        colorRow.appendChild(dot);
+      });
+
+      card.querySelector('[data-del-zone="' + zone.id + '"]').addEventListener("click", function () {
+        if (zones.length <= 1) { alert("Keep at least one zone."); return; }
+        if (!confirm('Delete "' + zone.label + '"? This cannot be undone.')) return;
+        zones = zones.filter(function (z) { return z.id !== zone.id; });
+        catalog = catalog.filter(function (c) { return c.zoneId !== zone.id; });
+        delete huntProgress[zone.id];
+        save(LS.zones, zones); save(LS.catalog, catalog); save(LS.hunt, huntProgress);
+        renderZonesEditor();
+        renderCatalogEditor();
+      });
+    });
+
+    wrap.querySelectorAll("input, textarea").forEach(function (field) {
+      field.addEventListener("input", function () {
+        var zid = field.getAttribute("data-zid");
+        var f = field.getAttribute("data-f");
+        var zone = zoneById(zid);
+        if (!zone) return;
+        if (f === "label") zone.label = field.value;
+        else if (f === "location") zone.location = field.value;
+        else if (f === "categories") zone.categories = field.value.split("\n").map(function (s) { return s.trim(); }).filter(Boolean);
+        else if (f === "heroName") { zone.heroItem = zone.heroItem || {}; zone.heroItem.name = field.value; }
+        else if (f === "heroHint") { zone.heroItem = zone.heroItem || {}; zone.heroItem.hint = field.value; }
+        save(LS.zones, zones);
+      });
+    });
+  }
+
+  document.getElementById("zone-add").addEventListener("click", function () {
+    var newZone = {
+      id: uid("zone"), label: "New Zone", location: "Set a location",
+      colorIndex: zones.length % ZONE_PALETTE.length,
+      categories: ["Add a category"],
+      heroItem: { name: "", hint: "" }
+    };
+    zones.push(newZone);
+    save(LS.zones, zones);
+    renderZonesEditor();
+  });
+
+  function renderCatalogEditor() {
+    var wrap = document.getElementById("catalog-editor");
+    wrap.innerHTML = "";
+    catalog.forEach(function (item) {
+      var card = document.createElement("div");
+      card.className = "editor-card";
+      var zoneOptions = zones.map(function (z) {
+        return '<option value="' + escapeHtml(z.id) + '"' + (z.id === item.zoneId ? " selected" : "") + '>' + escapeHtml(zoneCode(z)) + ': ' + escapeHtml(z.label) + '</option>';
+      }).join("");
+      card.innerHTML =
+        '<div class="editor-row"><label>Zone</label><select class="field" data-cid="' + item.id + '" data-f="zoneId">' + zoneOptions + '</select></div>' +
+        '<div class="editor-row"><label>Item name</label><input class="field" data-cid="' + item.id + '" data-f="name" value="' + escapeHtml(item.name) + '"></div>' +
+        '<div class="editor-row"><label>Search tags</label><input class="field" data-cid="' + item.id + '" data-f="tags" value="' + escapeHtml(item.tags) + '"></div>' +
+        '<div class="editor-row"><label>Feature</label><textarea class="field" rows="2" data-cid="' + item.id + '" data-f="feature">' + escapeHtml(item.feature) + '</textarea></div>' +
+        '<div class="editor-row"><label>Advantage</label><textarea class="field" rows="2" data-cid="' + item.id + '" data-f="advantage">' + escapeHtml(item.advantage) + '</textarea></div>' +
+        '<div class="editor-row"><label>Benefit / pitch script</label><textarea class="field" rows="2" data-cid="' + item.id + '" data-f="benefit">' + escapeHtml(item.benefit) + '</textarea></div>' +
+        '<div class="editor-row"><label>Note (optional, e.g. concession / availability caveat)</label><input class="field" data-cid="' + item.id + '" data-f="note" value="' + escapeHtml(item.note || "") + '"></div>' +
+        '<div class="editor-foot"><span></span><button class="btn btn-danger btn-sm" data-del-cat="' + item.id + '">Delete item</button></div>';
+      wrap.appendChild(card);
+
+      card.querySelector('[data-del-cat="' + item.id + '"]').addEventListener("click", function () {
+        if (!confirm('Delete "' + item.name + '"?')) return;
+        catalog = catalog.filter(function (c) { return c.id !== item.id; });
+        save(LS.catalog, catalog);
+        renderCatalogEditor();
+      });
+    });
+
+    wrap.querySelectorAll("input, textarea, select").forEach(function (field) {
+      field.addEventListener("input", function () { applyCatalogField(field); });
+      field.addEventListener("change", function () { applyCatalogField(field); });
+    });
+  }
+  function applyCatalogField(field) {
+    var cid = field.getAttribute("data-cid");
+    var f = field.getAttribute("data-f");
+    var item = catalog.filter(function (c) { return c.id === cid; })[0];
+    if (!item) return;
+    item[f] = field.value;
+    save(LS.catalog, catalog);
+  }
+
+  document.getElementById("catalog-add").addEventListener("click", function () {
+    if (!zones.length) { alert("Add a zone first."); return; }
+    catalog.push({ id: uid("item"), zoneId: zones[0].id, name: "New Hero Item", tags: "", feature: "", advantage: "", benefit: "" });
+    save(LS.catalog, catalog);
+    renderCatalogEditor();
+  });
+
+  /* ---------- data tab: export / import / reset ---------- */
+  function renderExportBox() {
+    document.getElementById("export-box").value = JSON.stringify({ zones: zones, catalog: catalog }, null, 2);
+  }
+  document.getElementById("export-copy").addEventListener("click", function () {
+    var box = document.getElementById("export-box");
+    box.select();
+    var copied = false;
+    try { if (navigator.clipboard) { navigator.clipboard.writeText(box.value); copied = true; } } catch (e) {}
+    if (!copied) { try { document.execCommand("copy"); copied = true; } catch (e) {} }
+    var btn = document.getElementById("export-copy");
+    var original = btn.textContent;
+    btn.textContent = copied ? "Copied!" : "Select all + Cmd/Ctrl+C";
+    setTimeout(function () { btn.textContent = original; }, 1500);
+  });
+  document.getElementById("import-apply").addEventListener("click", function () {
+    var raw = document.getElementById("import-box").value.trim();
+    if (!raw) return;
+    try {
+      var parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed.zones) || !Array.isArray(parsed.catalog)) throw new Error("bad shape");
+      zones = parsed.zones;
+      catalog = parsed.catalog;
+      save(LS.zones, zones); save(LS.catalog, catalog);
+      renderZonesEditor(); renderCatalogEditor(); renderExportBox();
+      alert("Import applied.");
+    } catch (e) {
+      alert("That doesn't look like valid exported data. Nothing was changed.");
+    }
+  });
+  document.getElementById("reset-defaults").addEventListener("click", function () {
+    if (!confirm("Reset zones and catalog to the NZ store defaults? Your custom edits will be lost.")) return;
+    zones = JSON.parse(JSON.stringify(DEFAULT_ZONES));
+    catalog = JSON.parse(JSON.stringify(DEFAULT_CATALOG));
+    huntProgress = {};
+    save(LS.zones, zones); save(LS.catalog, catalog); save(LS.hunt, huntProgress);
+    renderZonesEditor(); renderCatalogEditor(); renderExportBox();
+  });
+
+  /* ============================ FULL RERENDER ============================ */
+  function fullRerender() {
+    renderStatPill();
+    renderZoneGrid();
+    if (activeZoneId && !zoneById(activeZoneId)) activeZoneId = null;
+    selectZone(activeZoneId);
+    renderHunt();
+    renderCardZoneFilterSelect();
+    buildDeck(false);
+    renderCard();
+    renderSearchChips();
+    runSearch();
+  }
+
+  /* ============================ INIT ============================ */
+  applyTheme();
+  document.getElementById("mode-study").classList.toggle("is-active", !quizMode);
+  document.getElementById("mode-quiz").classList.toggle("is-active", quizMode);
+  renderStatPill();
+  renderZoneGrid();
+  renderHunt();
+  renderCardZoneFilterSelect();
+  buildDeck(false);
+  renderCard();
+  renderSearchChips();
+  runSearch();
+  switchTab("map");
+})();
+</script>
+</body>
+</html>
